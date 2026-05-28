@@ -1,11 +1,11 @@
 'use client';
+
 import { useState, useEffect, useRef } from 'react';
-import { Search, User, LogOut, Film, Ticket } from 'lucide-react';
+import { Search, User, LogOut, Film, Ticket, Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-// Adicionamos a propriedade isNowPlaying para separar os filmes
 const ALL_MOVIES = [
   { id: '1', title: 'Duna: Parte 2', genre: 'Ficção', isNowPlaying: true },
   { id: '2', title: 'O Voo Final', genre: 'Ação', isNowPlaying: true },
@@ -25,13 +25,14 @@ export default function Header() {
   const [searchQuery, setSearchQuery] = useState('');
   const [userName, setUserName] = useState<string | null>(null);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const filteredMovies = searchQuery.length > 0 
     ? ALL_MOVIES.filter(movie => movie.title.toLowerCase().includes(searchQuery.toLowerCase()))
     : [];
 
   useEffect(() => {
-    console.log("Posição do scroll:", window.scrollY);
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
     handleScroll(); 
     
@@ -64,23 +65,29 @@ export default function Header() {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+  }, [isMobileMenuOpen]);
 
   const handleLogout = () => {
     localStorage.removeItem('usuarioLogado');
     setUserName(null);
     setIsProfileMenuOpen(false);
+    setIsMobileMenuOpen(false); 
   };
 
-  // Recebe o objeto do filme inteiro para checar se está em cartaz
   const handleSelectMovie = (movie: typeof ALL_MOVIES[0]) => {
     setIsSearchOpen(false);
     setSearchQuery('');
+    setIsMobileMenuOpen(false);
     
     if (movie.isNowPlaying) {
-      // Se estiver em cartaz, vai direto comprar ingressos
       router.push(`/booking?title=${encodeURIComponent(movie.title)}`);
     } else {
-      // Se for "Em breve", avisa o usuário e rola até a seção de lançamentos
       alert(`Os ingressos para "${movie.title}" estarão disponíveis em breve!`);
       router.push('/#breve');
     }
@@ -89,11 +96,15 @@ export default function Header() {
   return (
     <header
       className={`fixed top-0 w-full z-50 transition-all duration-300 ${
-        isScrolled ? 'bg-slate-950/90 backdrop-blur-md shadow-lg shadow-black/50' : 'bg-transparent text-white'
+        isScrolled || isMobileMenuOpen ? 'bg-slate-950/95 backdrop-blur-md shadow-lg shadow-black/50' : 'bg-transparent text-white'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 md:px-8 h-20 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 text-2xl font-bold tracking-tighter text-white">
+        <Link 
+          href="/" 
+          className="flex items-center gap-2 text-2xl font-bold tracking-tighter text-white z-50"
+          onClick={() => setIsMobileMenuOpen(false)}
+        >
           <img src="/CineSol_logo.png" alt="CineSol Logo" className="w-8 h-8" />
           <span className="bg-clip-text text-transparent bg-gradient-to-r from-amber-400 to-amber-200">
             CineSol
@@ -106,17 +117,17 @@ export default function Header() {
           <Link href="/suport" className="hover:text-amber-400 transition-colors">Suporte</Link>
         </nav>
 
-        <div className="flex items-center gap-4 lg:gap-8">
+        <div className="flex items-center gap-4 lg:gap-8 z-50">
           
           <div className="relative flex items-center" ref={searchRef}>
             <AnimatePresence>
               {isSearchOpen && (
                 <motion.div
                   initial={{ width: 0, opacity: 0 }}
-                  animate={{ width: 260, opacity: 1 }}
+                  animate={{ width: 220, opacity: 1 }}
                   exit={{ width: 0, opacity: 0 }}
                   transition={{ duration: 0.3, ease: 'easeOut' }}
-                  className="absolute right-10 top-1/2 -translate-y-1/2"
+                  className="absolute right-10 top-1/2 -translate-y-1/2 md:w-[260px]"
                 >
                   <input
                     type="text"
@@ -133,7 +144,7 @@ export default function Header() {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 10 }}
-                        className="absolute top-full right-0 mt-3 w-full bg-slate-900 border border-slate-800 rounded-xl shadow-2xl overflow-hidden flex flex-col z-50"
+                        className="absolute top-full right-0 mt-3 w-[260px] bg-slate-900 border border-slate-800 rounded-xl shadow-2xl overflow-hidden flex flex-col z-50"
                       >
                         {filteredMovies.length > 0 ? (
                           filteredMovies.map((movie) => (
@@ -151,7 +162,6 @@ export default function Header() {
                                 </span>
                               </div>
                               
-                              {/* Alteramos o ícone dependendo do status do filme */}
                               {movie.isNowPlaying ? (
                                 <Ticket className="w-4 h-4 text-slate-600 group-hover:text-amber-400 transition-colors" />
                               ) : (
@@ -182,7 +192,6 @@ export default function Header() {
               <Search className="w-5 h-5 text-amber-400" />
             </button>
           </div>
-
           <div id="login" className="hidden md:flex items-center text-lg font-medium text-slate-300 relative">
             {userName ? (
               <div className="relative">
@@ -232,8 +241,97 @@ export default function Header() {
               </Link>
             )}
           </div>
+          <button 
+            className="md:hidden p-2 text-white hover:text-amber-400 transition-colors cursor-pointer"
+            onClick={() => {
+              setIsMobileMenuOpen(!isMobileMenuOpen);
+              setIsSearchOpen(false); 
+            }}
+          >
+            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+
         </div>
       </div>
+
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: '100vh' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3, ease: 'easeInOut' }}
+            className="md:hidden fixed top-20 left-0 w-full bg-slate-950/95 backdrop-blur-xl border-t border-slate-800 flex flex-col overflow-hidden"
+          >
+            <div className="flex flex-col px-6 py-8 gap-6 h-full">
+              <nav className="flex flex-col gap-6 text-2xl font-semibold text-slate-300">
+                <Link 
+                  href="/#cartaz" 
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="hover:text-amber-400 transition-colors border-b border-slate-800/50 pb-4"
+                >
+                  Filmes
+                </Link>
+                <Link 
+                  href="/#precos" 
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="hover:text-amber-400 transition-colors border-b border-slate-800/50 pb-4"
+                >
+                  Preços
+                </Link>
+                <Link 
+                  href="/suport" 
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="hover:text-amber-400 transition-colors border-b border-slate-800/50 pb-4"
+                >
+                  Suporte
+                </Link>
+              </nav>
+
+              <div className="mt-auto pb-24">
+                {userName ? (
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-center gap-3 text-slate-300 mb-2">
+                      <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-amber-400">
+                        <User size={20} />
+                      </div>
+                      <div>
+                        <span className="text-xs text-slate-500 uppercase tracking-wider block">Logado como</span>
+                        <span className="font-bold text-lg">{userName}</span>
+                      </div>
+                    </div>
+                    
+                    <Link 
+                      href="/profile" 
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="w-full flex items-center justify-center gap-2 bg-slate-800 text-white font-semibold py-4 rounded-xl hover:bg-slate-700 transition-colors"
+                    >
+                      Meu Perfil
+                    </Link>
+                    
+                    <button 
+                      onClick={handleLogout}
+                      className="w-full flex items-center justify-center gap-2 bg-red-500/10 text-red-400 border border-red-500/20 font-semibold py-4 rounded-xl hover:bg-red-500/20 transition-colors cursor-pointer"
+                    >
+                      <LogOut size={20} />
+                      Sair
+                    </button>
+                  </div>
+                ) : (
+                  <Link 
+                    href="/login" 
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="w-full flex items-center justify-center gap-2 bg-amber-400 text-slate-950 font-bold py-4 rounded-xl hover:bg-amber-300 transition-colors shadow-[0_0_20px_-5px_rgba(251,191,36,0.3)]"
+                  >
+                    <User size={20} />
+                    Entrar na Conta
+                  </Link>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   );
 }
