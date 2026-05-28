@@ -28,7 +28,7 @@ export default function PixPage() {
             <CheckCircle2 className="w-5 h-5" />
             Já paguei
           </Link>
-          <Link href="/Checkout/paymentMethod" className="w-full py-4 px-4 bg-slate-800 border border-slate-700 text-white text-lg font-bold rounded-xl hover:bg-slate-700 hover:border-slate-600 hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center">
+          <Link href="/checkout/paymentMethod" className="w-full py-4 px-4 bg-slate-800 border border-slate-700 text-white text-lg font-bold rounded-xl hover:bg-slate-700 hover:border-slate-600 hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center">
             Voltar
           </Link>
         </div>
